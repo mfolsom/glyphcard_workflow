@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Glyphcard cleanup backups
+.cleanup_backup_*/
+.glyphcard_backup_*/
+
+# Glyphcard Development State (not for demo)
+glyphcards/013_*.yaml
+glyphcards/014_*.yaml
+glyphcards/015_*.yaml
+glyphcards/016_*.yaml
+glyphcards/017_*.yaml
+glyphcards/018_*.yaml
+glyphcards/019_*.yaml
+glyphcards/020_*.yaml
+glyphcards/021_*.yaml
+glyphcards/022_*.yaml
+orientation/orientation_packet_1[3-9].yaml
+orientation/orientation_packet_2*.yaml
+agent_workspaces/claude/output_01[3-9].md
+agent_workspaces/claude/output_02*.md
+agent_workspaces/claude/mcp_server_docs/
+agent_workspaces/claude/test_card/
+agent_workspaces/gpt/
+archive/
+.glyphcard_backup_*/
+
+# Development/Design Documentation (keep internal)
+project_activation_design.md
+card_021_implementation_docs.md
+card_021_test_validation.md
+api_test.txt
+CLEANUP_SUMMARY.md
+DEMO_RELEASE_GUIDE.md
+CLAUDE.md
+README_original_backup.md
+cleanup_obsolete_files.sh
+restore_dev_state.sh
+prepare_demo_release.sh
+verify_demo_state.sh
+integration/setup_mcp.py
+mcp_server_docs/api.md
+mcp_server_docs/architecture.md
+mcp_server_docs/setup.md
+mcp_server_docs/quickstart.md

@@ -1,0 +1,24 @@
+id: 006
+status: blocked
+title: "EXAMPLE: Design Wireframes"
+type: demo
+size: 45 min
+description: |
+  Create wireframes and basic UX design for the Cat Picture App to guide development.
+deliverables:
+  - Wireframe sketches or digital mockups
+  - User flow diagram
+  - Basic UI component specifications
+context_needs:
+  - 002
+open_questions:
+  - Should we include filtering/search functionality?
+  - How many images per page/grid?
+  - Should there be image detail views?
+validation:
+  - Wireframes show main gallery view
+  - UI components are clearly defined
+  - User flow is documented
+assigned_to: gpt
+project: cat_picture_app
+linked_to: 002

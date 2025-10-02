@@ -1,0 +1,12 @@
+- affected:
+  - glyphcard.py
+  - serializer.py
+  date: '2025-07-28'
+  id: D-001
+  summary: Chose JSON for glyphcard serialization due to AI parsing failures with
+    Markdown.
+- affected:
+  - streaming.py
+  date: '2025-07-29'
+  id: D-002
+  summary: Deferred real-time socket layer in favor of file-based streaming.

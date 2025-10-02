@@ -1,0 +1,11 @@
+PyYAML>=6.0
+Flask>=2.3.0
+
+# FastMCP server dependencies
+fastmcp>=2.12.4
+httpx>=0.25.0
+pydantic>=2.0.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0

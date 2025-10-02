@@ -1,0 +1,23 @@
+id: 3
+status: blocked
+title: 'EXAMPLE: Fetch Cat Images'
+type: demo
+size: 1 hour
+description: 'Implement logic to fetch cat images from a public API or local source.
+
+  '
+deliverables:
+- Working image fetcher (API call or static file loader)
+- Example image data file or API response
+context_needs:
+- 2
+- 6
+open_questions:
+- Which cat image API should we use?
+- How many images should we fetch/display?
+validation:
+- Fetcher returns at least 5 cat images
+- Images display in the app
+assigned_to: claude
+project: cat_picture_app
+linked_to: 002

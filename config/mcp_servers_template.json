@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "glyphcard-workflow": {
+      "command": "python",
+      "args": ["/REPLACE/WITH/YOUR/GLYPHCARD/PATH/mcp_server.py"],
+      "description": "Glyphcard workflow automation server for structured project management",
+      "env": {}
+    }
+  }
+}

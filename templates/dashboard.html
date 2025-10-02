@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glyphcard PM Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #e9ecef;
+            color: #333;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .tab:hover {
+            background: #d6ddea;
+            color: #000;
+        }
+        .tab.active {
+            background: #007bff;
+            color: #fff;
+        }
+        .section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section.warning {
+            border-left: 4px solid #dc3545;
+        }
+        .task-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            position: relative;
+        }
+        .task-card.pending {
+            border-left: 4px solid #ffc107;
+        }
+        .task-card.needs-revision {
+            border-left: 4px solid #dc3545;
+        }
+        .task-card.accepted {
+            border-left: 4px solid #28a745;
+            opacity: 0.7;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .task-id {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .task-meta {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+        .deliverables, .validation {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .deliverables li, .validation li {
+            margin: 5px 0;
+        }
+        .actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-accept {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-changes {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-archive {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-output {
+            background: #17a2b8;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .btn-output:hover {
+            background: #138496;
+            text-decoration: none;
+            color: white;
+        }
+        .output-link {
+            margin: 10px 0;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .output-preview {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .expandable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .expandable:before {
+            content: '▶ ';
+        }
+        .expandable.expanded:before {
+            content: '▼ ';
+        }
+        .hidden {
+            display: none;
+        }
+        .dependency-tree,
+        .dependency-tree ul {
+            list-style: none;
+            margin: 0;
+            padding-left: 20px;
+        }
+        .dependency-tree > li {
+            margin-bottom: 16px;
+        }
+        .dependency-tree ul {
+            border-left: 2px dashed #cbd3df;
+            margin-left: 12px;
+            padding-left: 16px;
+        }
+        .dep-card {
+            background: #fafbff;
+            border: 1px solid #d9e2f3;
+            border-left: 4px solid #6c8cff;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 6px 0;
+        }
+        .dep-card.cycle {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .dep-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .dep-title {
+            margin-top: 6px;
+            color: #2f3c4f;
+            font-size: 0.95em;
+        }
+        .dep-status {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            color: #495057;
+            letter-spacing: 0.05em;
+        }
+        .dep-meta {
+            font-size: 0.85em;
+            color: #596b80;
+            margin-top: 6px;
+        }
+        .cycle-note {
+            color: #dc3545;
+            font-size: 0.8em;
+            margin-top: 6px;
+        }
+        .missing-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .missing-list li {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <h1>🛠️ Glyphcard PM Dashboard</h1>
+    <div class="tabs">
+        {% set current_view = view if view is defined and view else 'cards' %}
+        <a href="/" class="tab {{ 'active' if current_view == 'cards' else '' }}">Review Queue</a>
+        <a href="/dependencies" class="tab {{ 'active' if current_view == 'dependencies' else '' }}">Dependency Chains</a>
+    </div>
+    {% macro render_dependency(node) %}
+        <li>
+            <div class="dep-card{% if node.cycle %} cycle{% endif %}">
+                <div class="dep-header">
+                    <span>Card {{ node.card_id }}{% if node.card.title %}: {{ node.card.title }}{% endif %}</span>
+                    <span class="dep-status">{{ node.card.status|default('unknown') }}</span>
+                </div>
+                {% if node.card.project %}
+                <div class="dep-meta">Project: {{ node.card.project }}</div>
+                {% endif %}
+                {% if node.card._linked_to_str %}
+                <div class="dep-meta">Blocked by Card {{ node.card._linked_to_str }}</div>
+                {% endif %}
+                {% if node.cycle %}
+                <div class="cycle-note">Cycle detected: this link loops back to an earlier card.</div>
+                {% endif %}
+            </div>
+            {% if node.children %}
+            <ul>
+                {% for child in node.children %}
+                    {{ render_dependency(child) }}
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </li>
+    {% endmacro %}
+
+    {% if current_view == 'cards' %}
+        <div class="section">
+            <h2>📋 Cards Awaiting Acceptance ({{ pending|length }})</h2>
+            {% for card in pending %}
+            <div class="task-card pending">
+                <div class="task-header">
+                    <span class="task-id">Card {{ card.id }}: {{ card.title }}</span>
+                    <span class="task-meta">Size: {{ card.size }}</span>
+                </div>
+                <div class="task-meta">
+                    Assignee: {{ card.agent }} | Submitted: {{ card.submitted_date }}
+                </div>
+                {% if card.deliverables %}
+                <h4 class="expandable" onclick="toggleSection(this)">Deliverables</h4>
+                <ul class="deliverables hidden">
+                    {% for item in card.deliverables %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% if card.validation %}
+                <h4 class="expandable" onclick="toggleSection(this)">Validation Criteria</h4>
+                <ul class="validation hidden">
+                    {% for item in card.validation %}
+                    <li>✓ {{ item }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% if card.output_location %}
+                <h4>📄 Agent Output</h4>
+                <div class="output-link">
+                    <a href="/view_output/{{ card.id }}" target="_blank" class="btn-output">View Full Output: {{ card.output_location }}</a>
+                </div>
+                {% endif %}
+                {% if card.output_content %}
+                <h4 class="expandable" onclick="toggleSection(this)">Output Preview</h4>
+                <div class="output-preview hidden">{{ card.output_content[:500] }}{% if card.output_content|length > 500 %}...{% endif %}</div>
+                {% endif %}
+                <form action="/review/{{ card.id }}" method="POST">
+                    <div class="actions">
+                        <button type="submit" name="action" value="accept" class="btn-accept">✅ Accept</button>
+                        <button type="button" onclick="showNotesField('{{ card.id }}')" class="btn-changes">🔁 Request Changes</button>
+                    </div>
+                    <div id="notes-{{ card.id }}" style="display: none;">
+                        <textarea name="notes" placeholder="Enter revision notes..." rows="3"></textarea>
+                        <button type="submit" name="action" value="changes_needed" class="btn-changes">Submit Changes Request</button>
+                    </div>
+                </form>
+            </div>
+            {% endfor %}
+            {% if not pending %}
+            <p style="color: #666;">No glyphcards awaiting acceptance</p>
+            {% endif %}
+        </div>
+        <div class="section">
+            <h2>🔁 Cards Needing Revision ({{ needs_revision|length }})</h2>
+            {% for card in needs_revision %}
+            <div class="task-card needs-revision">
+                <div class="task-header">
+                    <span class="task-id">Card {{ card.id }}: {{ card.title }}</span>
+                </div>
+                <div class="task-meta">
+                    Revision requested: {{ card.revision_requested }}
+                </div>
+                <div class="task-meta">
+                    <strong>Notes:</strong> {{ card.notes }}
+                </div>
+            </div>
+            {% endfor %}
+            {% if not needs_revision %}
+            <p style="color: #666;">No cards need revision</p>
+            {% endif %}
+        </div>
+        <div class="section">
+            <h2>✅ Recently Accepted Cards</h2>
+            {% for card in accepted %}
+            <div class="task-card accepted">
+                <div class="task-header">
+                    <span class="task-id">Card {{ card.id }}: {{ card.title }}</span>
+                    <form action="/archive/{{ card.id }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn-archive">📦 Archive</button>
+                    </form>
+                </div>
+                <div class="task-meta">
+                    Accepted: {{ card.accepted_date }} | Reviewer: {{ card.reviewer }}
+                </div>
+            </div>
+            {% endfor %}
+            {% if not accepted %}
+            <p style="color: #666;">No accepted cards yet</p>
+            {% endif %}
+        </div>
+    {% elif current_view == 'dependencies' %}
+        <div class="section">
+            <h2>🧭 Glyphcard Dependency Chains</h2>
+            {% if dependency_trees %}
+            <ul class="dependency-tree">
+                {% for tree in dependency_trees %}
+                    {{ render_dependency(tree) }}
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="color: #666;">No dependency data available.</p>
+            {% endif %}
+        </div>
+        {% if missing_links %}
+        <div class="section warning">
+            <h3>⚠️ Missing Dependencies</h3>
+            <ul class="missing-list">
+                {% for item in missing_links %}
+                <li>
+                    Card {{ item.card._id_str }}{% if item.card.title %} ({{ item.card.title }}){% endif %}
+                    references missing card {{ item.missing_id }}.
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if unattached_cards %}
+        <div class="section warning">
+            <h3>🔍 Cards outside dependency trees</h3>
+            <ul class="missing-list">
+                {% for card in unattached_cards %}
+                <li>Card {{ card._id_str }}{% if card.title %} ({{ card.title }}){% endif %} - status {{ card.status|default('unknown') }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    {% endif %}
+    </div>
+    
+    <script>
+        function showNotesField(taskId) {
+            const notesDiv = document.getElementById('notes-' + taskId);
+            notesDiv.style.display = notesDiv.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function toggleSection(element) {
+            element.classList.toggle('expanded');
+            const content = element.nextElementSibling;
+            content.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

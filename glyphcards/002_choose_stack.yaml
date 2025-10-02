@@ -1,0 +1,20 @@
+id: 2
+status: available
+title: 'EXAMPLE: Choose Tech Stack'
+type: demo
+size: 30 min
+description: 'Decide on the frontend and backend technologies for the Cat Picture
+  App.
+
+  '
+deliverables:
+- Decision on frontend framework (e.g., React, Vue, Svelte)
+- Decision on backend (e.g., Flask, Node.js, none)
+context_needs: []
+open_questions:
+- Do we need authentication?
+- Should the backend serve images or just metadata?
+validation:
+- Stack choices are documented in README
+assigned_to: gpt
+project: cat_picture_app

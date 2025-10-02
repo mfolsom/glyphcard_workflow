@@ -1,0 +1,12 @@
+{
+  "active_project": null,
+  "projects": {
+    "cat_picture_app": {
+      "first_activated": "2025-01-01T00:00:00.000000",
+      "activation_count": 0,
+      "last_activated": null
+    }
+  },
+  "last_updated": "2025-01-01T00:00:00.000000",
+  "version": "1.0"
+}

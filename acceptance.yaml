@@ -1,0 +1,18 @@
+pending_reviews:
+- id: '001'
+  title: 'EXAMPLE: Project Kickoff: Cat Picture App'
+  submitted_date: '2025-01-01T00:00:00.000000'
+  assignee: claude
+  size: 1 hour
+  deliverables:
+  - Initialized repo with README
+  - Basic project structure (frontend folder, backend folder)
+  - Initial commit
+  validation:
+  - Repo is initialized and accessible
+  - Project folders exist
+  - README explains the project
+  orientation_info: {}
+  output_location: agent_workspaces/claude/output_001.md
+accepted: []
+needs_revision: []
