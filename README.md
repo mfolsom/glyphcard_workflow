@@ -2,6 +2,16 @@
 
 An agent-friendly project management system that breaks work into atomic cards and guides AI agents through a structured four-step development workflow.
 
+## Why Glyphcard?
+
+Coding agents often fail in the same ways poorly managed engineering teams do: they lose context, forget project state, and produce shallow output when micromanaged or left without structure.
+
+After decades managing engineering teams at eBay, Amazon, and Airbus, I realized AI agents need the same scaffolding that makes human teams thrive: clear tasks, feedback loops, and space to reason through problems.
+
+**📖 Read the full story**: [Coding agents are faltering because you're mis-managing them](https://medium.com/@mfolsom/coding-agents-are-faltering-because-youre-mis-managing-them-7dd1693323bb)
+
+---
+
 ## Quick Start
 
 ### For AI Agents (via MCP)
