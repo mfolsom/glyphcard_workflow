@@ -18,6 +18,12 @@ After decades managing engineering teams at eBay, Amazon, and Airbus, I realized
 
 The recommended way to use Glyphcard is through the MCP server:
 
+# Claude Code setup instructions here
+[integration/claude_code_setup.md](../integration/claude_code_setup.md)
+
+# VS Code Setup instructions here
+[integration/vs_code_setup.md](integration/vs_code_setup.md)
+
 ```bash
 # Claude Code Setup
 integration/claude_code_setup.md
