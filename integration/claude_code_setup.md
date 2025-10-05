@@ -4,10 +4,11 @@ This guide shows how to set up the Glyphcard MCP server in Claude Code CLI.
 
 ## Prerequisites
 
-- Claude Code CLI installed
-- Python 3.12+
+- [Claude Code CLI installed](https://www.claude.com/product/claude-code )
+- [Python 3.12+](https://www.python.org/downloads/)
 - Glyphcard repository cloned
-- Virtual environment created and dependencies installed
+- [Virtual environment created and dependencies installed](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/)
+
 
 ## Setup Steps
 
