@@ -19,10 +19,11 @@ After decades managing engineering teams at eBay, Amazon, and Airbus, I realized
 The recommended way to use Glyphcard is through the MCP server:
 
 ```bash
-# Setup MCP server (one time)
-python integration/setup_mcp.py
+# Claude Code Setup
+integration/claude_code_setup.md
 
-# Restart Claude Code to load the server
+#VS Code Setup
+integration/vs_code_setup.md
 ```
 
 Then use MCP tools in your AI agent:
