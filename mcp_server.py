@@ -337,8 +337,6 @@ def _discover_available_work_internal() -> Dict[str, Any]:
 def start_work() -> Dict[str, Any]:
     """
     Simple command to discover and start the next available card automatically.
-    Perfect for agents who want to just "start working" without manual card selection.
-    
     Returns:
         Simple response with next action or work started
     """
@@ -407,8 +405,6 @@ def start_work() -> Dict[str, Any]:
 def get_card_context(card_id: str) -> Dict[str, Any]:
     """
     Get everything you need to know about a card in a clean, actionable format.
-    Replaces the verbose glyphcard_get_orientation_context with agent-friendly output.
-
     Args:
         card_id: The card ID to get context for
 
@@ -464,8 +460,6 @@ def get_card_context(card_id: str) -> Dict[str, Any]:
 def submit_card(card_id: str, module_name: Optional[str] = None) -> Dict[str, Any]:
     """
     Submit completed work including mandatory documentation phase.
-    Streamlined version of glyphcard_submit_work.
-
     Args:
         card_id: The card ID to submit
         module_name: Optional module name (auto-generated if not provided)
@@ -669,11 +663,9 @@ def create_project(project_name: str, description: Optional[str] = None) -> Dict
 @mcp.tool
 def archive_card(card_id: str) -> Dict[str, Any]:
     """
-    Archive an accepted card and its related files.
-    
+    Archive an accepted card and its related files.  
     Args:
         card_id: The ID of the card to archive
-        
     Returns:
         Dictionary with archival status and details
     """
@@ -686,7 +678,6 @@ def archive_card(card_id: str) -> Dict[str, Any]:
 def cleanup_acceptance_tracking() -> Dict[str, Any]:
     """
     Remove archived cards from acceptance.yaml tracking.
-    
     Returns:
         Dictionary with cleanup status and details
     """
@@ -698,8 +689,7 @@ def cleanup_acceptance_tracking() -> Dict[str, Any]:
 @mcp.tool
 def list_archived_cards() -> Dict[str, Any]:
     """
-    List all archived cards.
-    
+    List all archived cards.   
     Returns:
         Dictionary with archived card information
     """
