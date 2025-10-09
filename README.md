@@ -21,6 +21,7 @@ The recommended way to use Glyphcard is through the MCP server:
 Setup guides:
 - Claude Code: [integration/claude_code_setup.md](integration/claude_code_setup.md)
 - VSCode: [integration/vscode_setup.md](integration/vscode_setup.md)
+- Local MCP troubleshooting: [usage_guides/local_mcp_troubleshooting.md](usage_guides/local_mcp_troubleshooting.md)
 
 Then use MCP tools in your AI agent:
 - `start_work()` - Pick up and orient on next available card
