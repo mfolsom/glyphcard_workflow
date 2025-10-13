@@ -14,5 +14,21 @@ pending_reviews:
   - README explains the project
   orientation_info: {}
   output_location: agent_workspaces/claude/output_001.md
+- id: '022'
+  title: Remove cat picture demo cards and update gitignore
+  submitted_date: '2025-10-12T23:48:18.372195'
+  assignee: claude
+  size: 30 minutes
+  deliverables:
+  - Remove all cat_picture_app demo cards from glyphcards/
+  - Update .gitignore to exclude glyphcards/ directory entirely
+  - Clean up any orphaned orientation packets or outputs related to cat demo cards
+  - Verify git status shows glyphcards/ as ignored
+  validation:
+  - No cat_picture_app cards remain in glyphcards/
+  - glyphcards/ directory is in .gitignore
+  - git status does not show glyphcards/ files
+  orientation_info: {}
+  output_location: agent_workspaces/claude/output_022.md
 accepted: []
 needs_revision: []

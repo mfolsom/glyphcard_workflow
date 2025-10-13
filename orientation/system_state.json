@@ -1,7 +1,9 @@
 {
-  "cat_picture_app_demo": {
-    "status": "available",
-    "last_updated": "2025-01-01T00:00:00.000000",
-    "linked_cards": []
+  "card_22_remove_cat_picture_demo_cards_and_update_gitignore": {
+    "status": "completed",
+    "last_updated": "2025-10-12T23:48:18.373093",
+    "linked_cards": [
+      "022"
+    ]
   }
 }

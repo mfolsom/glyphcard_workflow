@@ -12,12 +12,12 @@ Licensed under the MIT License - see [LICENSE](../LICENSE) for details.
 
 ```json
 {
-  "active_project": "mcp_server_docs",
+  "active_project": "my_web_app",
   "projects": [
-    {"name": "mcp_server_docs", "active": true, "card_count": 7, "registered": true},
-    {"name": "cat_picture_app", "active": false, "card_count": 12, "registered": false}
+    {"name": "my_web_app", "active": true, "card_count": 15, "registered": true},
+    {"name": "mobile_app", "active": false, "card_count": 8, "registered": false}
   ],
-  "total_projects": 4
+  "total_projects": 2
 }
 ```
 
@@ -29,10 +29,10 @@ Licensed under the MIT License - see [LICENSE](../LICENSE) for details.
 ```json
 {
   "success": true,
-  "active_project": "mcp_server_docs",
+  "active_project": "my_web_app",
   "previous_project": null,
-  "message": "Activated project 'mcp_server_docs'",
-  "card_count": 7
+  "message": "Activated project 'my_web_app'",
+  "card_count": 15
 }
 ```
 
@@ -44,8 +44,8 @@ Licensed under the MIT License - see [LICENSE](../LICENSE) for details.
 ```json
 {
   "success": true,
-  "deactivated_project": "mcp_server_docs",
-  "message": "Deactivated project 'mcp_server_docs'. Now in conversation mode."
+  "deactivated_project": "my_web_app",
+  "message": "Deactivated project 'my_web_app'. Now in conversation mode."
 }
 ```
 
@@ -57,13 +57,13 @@ Licensed under the MIT License - see [LICENSE](../LICENSE) for details.
 ```json
 {
   "mode": "project",
-  "active_project": "mcp_server_docs",
-  "timestamp": "2025-09-30T17:47:42.820959",
-  "card_count": 7,
+  "active_project": "my_web_app",
+  "timestamp": "2025-10-12T15:30:00.000000",
+  "card_count": 15,
   "project_info": {
-    "first_activated": "2025-09-30T17:46:31.404075",
+    "first_activated": "2025-10-12T10:00:00.000000",
     "activation_count": 2,
-    "last_activated": "2025-09-30T17:46:31.404084"
+    "last_activated": "2025-10-12T15:30:00.000000"
   }
 }
 ```
@@ -128,11 +128,11 @@ Displays current project context and session information.
 ### Start Work in Project Context
 ```python
 # Human sets project context
-activate_project("mcp_server_docs")
+activate_project("my_web_app")
 
 # AI agent works within project scope
-work = list_my_work()  # Only shows mcp_server_docs cards
-start_work()           # Starts next card in mcp_server_docs
+work = list_my_work()  # Only shows my_web_app cards
+start_work()           # Starts next card in my_web_app
 ```
 
 ### Switch Project Context
@@ -141,10 +141,10 @@ start_work()           # Starts next card in mcp_server_docs
 context = get_project_context()
 
 # Switch to different project
-activate_project("cat_picture_app") 
+activate_project("mobile_app")
 
 # Work is now scoped to new project
-work = list_my_work()  # Only shows cat_picture_app cards
+work = list_my_work()  # Only shows mobile_app cards
 ```
 
 ### Return to Multi-Project View
@@ -164,7 +164,7 @@ All project tools return consistent error structures:
 {
   "success": false,
   "error": "Project 'nonexistent' not found",
-  "available_projects": ["mcp_server_docs", "cat_picture_app"]
+  "available_projects": ["my_web_app", "mobile_app"]
 }
 ```
 
@@ -183,15 +183,15 @@ Common error scenarios:
 ### State Structure
 ```json
 {
-  "active_project": "mcp_server_docs",
+  "active_project": "my_web_app",
   "projects": {
-    "mcp_server_docs": {
-      "first_activated": "2025-09-30T17:46:31.404075",
+    "my_web_app": {
+      "first_activated": "2025-10-12T10:00:00.000000",
       "activation_count": 3,
-      "last_activated": "2025-09-30T17:47:42.820959"
+      "last_activated": "2025-10-12T15:30:00.000000"
     }
   },
-  "last_updated": "2025-09-30T17:47:42.820959",
+  "last_updated": "2025-10-12T15:30:00.000000",
   "version": "1.0"
 }
 ```

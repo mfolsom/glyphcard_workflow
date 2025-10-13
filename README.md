@@ -103,7 +103,7 @@ Required sections:
 
 ### 4. SUBMIT
 ```bash
-python orientation/submit_output.py --card 001 --module cat_app_kickoff
+python orientation/submit_output.py --card 001 --module project_setup
 ```
 Updates card status to `awaiting_acceptance` and adds to review queue.
 
@@ -118,7 +118,7 @@ Glyphcard supports two operational modes:
 
 **Project Mode (Activated)**
 ```bash
-python project_manager.py activate cat_picture_app
+python project_manager.py activate my_project
 ```
 - All implementation uses glyphcard workflow
 - Namespace filtering active
@@ -130,19 +130,19 @@ Cards are YAML files in `glyphcards/`:
 
 ```yaml
 id: 3
-title: "Fetch Cat Images"
-project: "cat_picture_app"
+title: "Implement User Authentication"
+project: "my_app"
 assigned_to: "claude"
 status: "available"
 size: "2-4 hours"
 deliverables:
-  - "Working image fetcher"
-  - "Example data"
+  - "OAuth integration"
+  - "Session management"
 validation:
-  - "Fetcher returns 5+ images"
-  - "Images display in app"
+  - "Users can sign in/out"
+  - "Sessions persist correctly"
 context_needs:
-  - "API selection from card 002"
+  - "Framework selection from card 002"
 linked_to: 2  # Blocks until card 2 is accepted
 open_questions: []
 ```
@@ -225,25 +225,6 @@ Each agent saves work under `agent_workspaces/{agent_name}/`:
 - **Project code**: `{project_name}/` (shared workspace)
 
 The system is agent-agnostic - use any name (claude, gpt, custom).
-
-## Example: Cat Picture App Demo
-
-The repository includes a complete demo project with cards 001-012:
-
-1. Project kickoff
-2. Stack selection
-3. Image fetching
-4. Frontend build
-5. Deployment
-6. Wireframes
-7. Dev environment
-8. API documentation
-9. Image caching
-10. Accessibility
-11. Unit tests
-12. Performance optimization
-
-Explore these cards to understand the workflow in practice.
 
 ## State Management
 

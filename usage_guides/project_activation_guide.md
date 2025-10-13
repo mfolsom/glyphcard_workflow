@@ -38,12 +38,12 @@ Shows all available projects with card counts and status.
 
 ```json
 {
-  "active_project": "mcp_server_docs",
+  "active_project": "my_web_app",
   "projects": [
-    {"name": "mcp_server_docs", "active": true, "card_count": 7},
-    {"name": "cat_picture_app", "active": false, "card_count": 12}
+    {"name": "my_web_app", "active": true, "card_count": 15},
+    {"name": "mobile_app", "active": false, "card_count": 8}
   ],
-  "total_projects": 4
+  "total_projects": 2
 }
 ```
 
@@ -53,9 +53,9 @@ Activates a specific project for focused work.
 ```json
 {
   "success": true,
-  "active_project": "mcp_server_docs",
-  "message": "Activated project 'mcp_server_docs'",
-  "card_count": 7
+  "active_project": "my_web_app",
+  "message": "Activated project 'my_web_app'",
+  "card_count": 15
 }
 ```
 
@@ -65,8 +65,8 @@ Returns to conversation mode (all projects visible).
 ```json
 {
   "success": true,
-  "deactivated_project": "mcp_server_docs",
-  "message": "Deactivated project 'mcp_server_docs'. Now in conversation mode."
+  "deactivated_project": "my_web_app",
+  "message": "Deactivated project 'my_web_app'. Now in conversation mode."
 }
 ```
 
@@ -76,9 +76,9 @@ Shows current session context and mode.
 ```json
 {
   "mode": "project",
-  "active_project": "mcp_server_docs", 
-  "card_count": 7,
-  "timestamp": "2025-09-30T17:32:02.250352"
+  "active_project": "my_web_app",
+  "card_count": 15,
+  "timestamp": "2025-10-12T15:30:00.000000"
 }
 ```
 
@@ -153,25 +153,25 @@ create_card_ai.py        # Updated for project namespace support
 
 ```bash
 # Human activates project
-python project_manager.py activate mcp_server_docs
+python project_manager.py activate my_web_app
 
-# AI agent sees only mcp_server_docs cards
-list_my_work()  # Returns only cards from mcp_server_docs project
+# AI agent sees only my_web_app cards
+list_my_work()  # Returns only cards from my_web_app project
 
 # AI works within project scope
-start_work()    # Starts next available card in mcp_server_docs
+start_work()    # Starts next available card in my_web_app
 
 # Create new cards in active project context
 glyphcard_create_card(
-    title="New MCP Feature",
+    title="Add Payment Processing",
     deliverables=["Implementation", "Documentation"]
-)  # Automatically assigned to mcp_server_docs project
+)  # Automatically assigned to my_web_app project
 
 # Human switches projects
-python project_manager.py activate cat_picture_app
+python project_manager.py activate mobile_app
 
 # AI now sees different card set
-list_my_work()  # Returns only cards from cat_picture_app project
+list_my_work()  # Returns only cards from mobile_app project
 ```
 
 This system provides the foundation for sophisticated workflow orchestration while maintaining human control over project boundaries and context switching.
