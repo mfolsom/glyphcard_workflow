@@ -25,6 +25,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 GLYPHCARDS_DIR = os.path.join(BASE_DIR, "glyphcards")
 ACCEPTANCE_FILE = os.path.join(BASE_DIR, "acceptance.yaml")
 ARCHIVE_DIR = os.path.join(BASE_DIR, "archive", "glyphcards")
+PROJECT_STATE_FILE = os.path.join(BASE_DIR, ".glyphcard", "project_state.json")
 
 def load_yaml(path):
     if not os.path.exists(path):
@@ -35,6 +36,17 @@ def load_yaml(path):
 def save_yaml(data, path):
     with open(path, "w") as f:
         yaml.dump(data, f, sort_keys=False)
+
+def get_active_project():
+    """Get the active project from project_state.json"""
+    if not os.path.exists(PROJECT_STATE_FILE):
+        return None
+    try:
+        with open(PROJECT_STATE_FILE, 'r') as f:
+            state = json.load(f)
+        return state.get('active_project')
+    except (json.JSONDecodeError, OSError):
+        return None
 
 def get_card_details(card_id):
     """Get full glyphcard details from glyphcard file"""
@@ -102,9 +114,19 @@ def _load_all_glyphcards():
     return cards
 
 
-def _build_dependency_view():
-    """Construct dependency trees and metadata for UI rendering."""
-    cards = _load_all_glyphcards()
+def _build_dependency_view(project_filter=None):
+    """Construct dependency trees and metadata for UI rendering.
+
+    Args:
+        project_filter: Optional project name to filter cards by
+    """
+    all_cards = _load_all_glyphcards()
+
+    # Filter cards by project if specified
+    if project_filter:
+        cards = [card for card in all_cards if card.get('project') == project_filter]
+    else:
+        cards = all_cards
     by_id = {card["_id_str"]: card for card in cards if card.get("_id_str")}
     children = defaultdict(list)
     missing_links = []
@@ -169,31 +191,56 @@ def _build_dependency_view():
 @app.route('/')
 def dashboard():
     """Main dashboard view"""
+    active_project = get_active_project()
     acceptance_data = load_yaml(ACCEPTANCE_FILE)
-    # Enhance pending reviews with glyphcard details
+
+    # Enhance pending reviews with glyphcard details and filter by active project
+    pending_reviews = []
     for card in acceptance_data.get('pending_reviews', []):
         card_details = get_card_details(card['id'])
         if card_details:
+            # Filter by active project if one is set
+            if active_project and card_details.get('project') != active_project:
+                continue
             card['status'] = card_details.get('status', 'unknown')
             card['size'] = card_details.get('size', 'Unknown')
             card['deliverables'] = card_details.get('deliverables', [])
             card['validation'] = card_details.get('validation', [])
+            card['project'] = card_details.get('project', 'unknown')
             card['output_content'] = get_output_content(card['id'], card.get('assignee', 'unknown'))
             # Include the output_location for direct file access
             card['output_location'] = card.get('output_location', f"agent_workspaces/{card.get('assignee', 'unknown')}/output_{str(card['id']).zfill(3)}.md")
-    # Filter accepted glyphcards to only show those that still exist (not archived)
+            pending_reviews.append(card)
+
+    # Filter needs_revision by active project
+    needs_revision_cards = []
+    for card in acceptance_data.get('needs_revision', []):
+        card_details = get_card_details(card['id'])
+        if card_details:
+            if active_project and card_details.get('project') != active_project:
+                continue
+            card['project'] = card_details.get('project', 'unknown')
+            needs_revision_cards.append(card)
+
+    # Filter accepted glyphcards to only show those that still exist (not archived) and match active project
     accepted_cards = []
     for card in acceptance_data.get('accepted', [])[-10:]:  # Last 10
-        if get_card_details(card['id']):  # Card still exists in glyphcards dir
+        card_details = get_card_details(card['id'])
+        if card_details:  # Card still exists in glyphcards dir
+            if active_project and card_details.get('project') != active_project:
+                continue
+            card['project'] = card_details.get('project', 'unknown')
             accepted_cards.append(card)
+
     return render_template('dashboard.html',
                            view='cards',
-                           pending=acceptance_data.get('pending_reviews', []),
-                           needs_revision=acceptance_data.get('needs_revision', []),
+                           pending=pending_reviews,
+                           needs_revision=needs_revision_cards,
                            accepted=accepted_cards,
                            dependency_trees=[],
                            missing_links=[],
-                           unattached_cards=[])
+                           unattached_cards=[],
+                           active_project=active_project)
 
 @app.route('/view_output/<card_id>')
 def view_output(card_id):
@@ -249,7 +296,8 @@ def review_card(card_id):
 @app.route('/dependencies')
 def dependency_dashboard():
     """Render dependency chain view for PMs."""
-    dependency_trees, missing_links, unattached_cards = _build_dependency_view()
+    active_project = get_active_project()
+    dependency_trees, missing_links, unattached_cards = _build_dependency_view(project_filter=active_project)
     return render_template('dashboard.html',
                            view='dependencies',
                            pending=[],
@@ -257,7 +305,8 @@ def dependency_dashboard():
                            accepted=[],
                            dependency_trees=dependency_trees,
                            missing_links=missing_links,
-                           unattached_cards=unattached_cards)
+                           unattached_cards=unattached_cards,
+                           active_project=active_project)
 
 @app.route('/archive/<card_id>', methods=['POST'])
 def archive_card(card_id):

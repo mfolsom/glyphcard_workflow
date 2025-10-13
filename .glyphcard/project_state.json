@@ -6,10 +6,15 @@
       "description": "Features for creating and managing user workspaces in Glyphcard",
       "workspace_path": "/home/rowandev/glyphcard/agent_workspaces/claude/workspace_management",
       "managed": true,
+      "activation_count": 2,
+      "last_activated": "2025-10-13T00:34:20.190717"
+    },
+    "my_web_app": {
+      "first_activated": "2025-10-13T00:32:11.560769",
       "activation_count": 1,
-      "last_activated": "2025-10-12T23:42:34.772108"
+      "last_activated": "2025-10-13T00:32:11.560777"
     }
   },
-  "last_updated": "2025-10-12T23:42:34.772116",
+  "last_updated": "2025-10-13T00:34:20.190723",
   "version": "1.0"
 }
