@@ -1,12 +1,15 @@
 {
-  "active_project": null,
+  "active_project": "workspace_management",
   "projects": {
-    "cat_picture_app": {
-      "first_activated": "2025-01-01T00:00:00.000000",
-      "activation_count": 0,
-      "last_activated": null
+    "workspace_management": {
+      "created": "2025-10-12T23:42:25.899949",
+      "description": "Features for creating and managing user workspaces in Glyphcard",
+      "workspace_path": "/home/rowandev/glyphcard/agent_workspaces/claude/workspace_management",
+      "managed": true,
+      "activation_count": 1,
+      "last_activated": "2025-10-12T23:42:34.772108"
     }
   },
-  "last_updated": "2025-01-01T00:00:00.000000",
+  "last_updated": "2025-10-12T23:42:34.772116",
   "version": "1.0"
 }
