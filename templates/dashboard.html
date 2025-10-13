@@ -233,7 +233,13 @@
 </head>
 <body>
     <div class="container">
-    <h1>🛠️ Glyphcard PM Dashboard</h1>
+    <h1>🛠️ Glyphcard PM Dashboard{% if active_project %} <span style="color: #007bff; font-size: 0.7em;">[Project: {{ active_project }}]</span>{% endif %}</h1>
+    {% if active_project %}
+    <div style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 10px; margin: 10px 0; border-radius: 4px;">
+        <strong>🔍 Project Filter Active:</strong> Showing only cards from "<strong>{{ active_project }}</strong>" project.
+        <span style="color: #666; font-size: 0.9em;">(To see all projects, deactivate the project using: <code>python project_manager.py deactivate</code>)</span>
+    </div>
+    {% endif %}
     <div class="tabs">
         {% set current_view = view if view is defined and view else 'cards' %}
         <a href="/" class="tab {{ 'active' if current_view == 'cards' else '' }}">Review Queue</a>
