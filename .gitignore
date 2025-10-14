@@ -44,6 +44,7 @@ Thumbs.db
 # Glyphcard Development State (not for demo)
 glyphcards/
 .glyphcard/project_state.json
+acceptance.yaml
 orientation/orientation_packet_1[3-9].yaml
 orientation/orientation_packet_2*.yaml
 orientation/system_state.json
