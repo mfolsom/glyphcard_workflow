@@ -28,6 +28,8 @@ def load_yaml(path):
         return yaml.safe_load(f)
 
 def load_json(path):
+    if not os.path.exists(path):
+        return {}
     with open(path) as f:
         return json.load(f)
 
