@@ -162,6 +162,7 @@ def test_start_work_returns_waiting_when_only_blocked(monkeypatch):
 
     assert result["action"] == "waiting"
     assert "No work available" in result["message"]
+    assert result["blocked_cards"] == [{"id": 99, "title": "Blocked"}]
 
 
 def test_start_work_runs_reorienter_on_available_card(monkeypatch):
@@ -176,9 +177,21 @@ def test_start_work_runs_reorienter_on_available_card(monkeypatch):
             "blocked_count": 0,
         },
     )
+    monkeypatch.setattr(
+        mcp_server,
+        "_summarize_dependencies",
+        lambda card_id: {"card_id": card_id, "dependencies_met": True, "dependencies": [], "blocking": [], "blocking_count": 0},
+    )
+    monkeypatch.setattr(
+        mcp_server,
+        "_collect_card_progress",
+        lambda card_id, run_tests=False, test_command=None: {"progress": {"reoriented": True}, "next_actions": [], "dependencies": {}},
+    )
     captured = {}
 
     def fake_run(cmd, capture_output, text, cwd):
+        if cmd[0] == "git" and cmd[1] == "status":
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
         captured["cmd"] = cmd
         captured["cwd"] = cwd
         captured["capture_output"] = capture_output
@@ -197,6 +210,7 @@ def test_start_work_runs_reorienter_on_available_card(monkeypatch):
     assert captured["capture_output"] is True
     assert captured["text"] is True
     assert captured["cwd"] == str(mcp_server.workflow.base_dir)
+    assert "dependency_summary" in result
 
 
 def test_check_dependencies_reports_pending_and_modules(monkeypatch, tmp_path):
@@ -263,3 +277,62 @@ def test_check_dependencies_reports_pending_and_modules(monkeypatch, tmp_path):
     assert {mod["module_name"] for mod in module_entries} == {"sync_module", "docs_module"}
     sync_module = next(mod for mod in module_entries if mod["module_name"] == "sync_module")
     assert sync_module["met"] is False
+    assert result["blocking"] == []
+    assert result["blocking_count"] == 0
+
+
+def test_get_card_progress_reports_status(monkeypatch, tmp_path):
+    """Progress checklist highlights orientation, docs, workspace, tests, and dependencies."""
+    orientation_dir = tmp_path / "orientation"
+    orientation_dir.mkdir()
+    orientation_file = orientation_dir / "orientation_packet_025.yaml"
+    orientation_file.write_text("summary: ok")
+
+    workspace_dir = tmp_path / "agent_workspaces" / "claude" / "workspace_management"
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+    doc_path = tmp_path / "agent_workspaces" / "claude" / "output_025.md"
+    doc_path.write_text("Documenting work.\n" * 50)  # >200 chars
+
+    glyphcards_dir = tmp_path / "glyphcards"
+    glyphcards_dir.mkdir()
+    card_file = glyphcards_dir / "025_progress.yaml"
+    card_data = {
+        "id": 25,
+        "title": "Progress Checklist",
+        "project": "workspace_management",
+        "status": "in_progress",
+        "linked_to": None,
+    }
+    card_file.write_text(yaml.dump(card_data))
+
+    monkeypatch.setattr(mcp_server.workflow, "base_dir", tmp_path)
+    monkeypatch.setattr(mcp_server.workflow, "orientation_dir", orientation_dir)
+    monkeypatch.setattr(mcp_server.workflow, "glyphcards_dir", glyphcards_dir)
+    monkeypatch.setattr(
+        mcp_server,
+        "_summarize_dependencies",
+        lambda cid: {
+            "card_id": cid,
+            "dependencies_met": True,
+            "dependencies": [
+                {"type": "module", "module_name": "demo", "status": "archived", "linked_cards": [], "met": True, "explanation": "Module status: archived"}
+            ],
+            "blocking": [],
+            "blocking_count": 0,
+        },
+    )
+    monkeypatch.setattr(mcp_server, "_collect_git_status", lambda prefix: [{"status": "M", "path": f"{prefix}/file.txt"}])
+
+    result = call_tool(mcp_server.get_card_progress, "25")
+
+    assert result["orientation"]["present"] is True
+    assert result["documentation"]["present"] is True
+    assert result["documentation"]["length"] > 200
+    assert result["workspace"]["exists"] is True
+    assert result["workspace"]["tracked_changes"] == [{"status": "M", "path": "agent_workspaces/claude/workspace_management/file.txt"}]
+    assert result["tests"]["status"] == "not_run"
+    assert result["dependencies"]["dependencies_met"] is True
+    assert result["dependencies"]["dependencies"][0]["met"] is True
+    assert result["progress"]["documentation_ready"] is True
+    assert result["ready_to_submit"] is True
+    assert "Run pytest" in " ".join(result["next_actions"])
