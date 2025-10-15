@@ -45,6 +45,7 @@ Thumbs.db
 glyphcards/
 .glyphcard/project_state.json
 acceptance.yaml
+orientation/orientation_packet_1.yaml
 orientation/orientation_packet_1[3-9].yaml
 orientation/orientation_packet_2*.yaml
 orientation/system_state.json
@@ -62,4 +63,3 @@ project_activation_design.md
 CLAUDE.md
 restore_dev_state.sh
 verify_demo_state.sh
-
