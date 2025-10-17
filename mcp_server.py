@@ -18,6 +18,8 @@ import sys
 import json
 import yaml
 import subprocess
+import shlex
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -70,6 +72,285 @@ class GlyphcardWorkflow:
 # Create global workflow instance
 workflow = GlyphcardWorkflow()
 
+
+def _normalize_card_id(card_id: Any) -> str:
+    """Return zero-padded string identifier for numeric card IDs."""
+    text = str(card_id)
+    return text.zfill(3) if text.isdigit() else text
+
+
+def _load_card_metadata(card_id: str) -> Optional[Dict[str, Any]]:
+    """Load glyphcard metadata for the given card ID."""
+    padded = _normalize_card_id(card_id)
+    candidates = list(workflow.glyphcards_dir.glob(f"{padded}_*.yaml"))
+    if not candidates:
+        fallback = workflow.glyphcards_dir / f"{padded}.yaml"
+        if fallback.exists():
+            candidates = [fallback]
+    if not candidates:
+        return None
+    card_path = candidates[0]
+    data = workflow._load_yaml(card_path) or {}
+    data["__path__"] = str(card_path)
+    return data
+
+
+def _collect_git_status(prefix: str) -> List[Dict[str, str]]:
+    """Return modified files under the provided prefix (relative to repo root)."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            cwd=str(workflow.base_dir)
+        )
+    except Exception:
+        return []
+
+    if result.returncode != 0:
+        return []
+
+    changes: List[Dict[str, str]] = []
+    for line in result.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        status = line[:2].strip()
+        path = line[3:].strip()
+        if path.startswith(prefix):
+            changes.append({
+                "status": status or "M",
+                "path": path
+            })
+    return changes
+
+
+def _summarize_dependencies(card_id: str) -> Dict[str, Any]:
+    """Summarize upstream dependencies and downstream blockers for a card."""
+    try:
+        dependency_state, card_entries = compute_dependency_state()
+        lookup: Dict[Any, Dict[str, Any]] = {}
+        for entry in card_entries:
+            key = entry["id"] if entry["id"] is not None else entry["id_str"]
+            lookup[key] = entry
+
+        # Locate primary entry
+        key = int(card_id) if str(card_id).isdigit() else str(card_id)
+        entry = lookup.get(key)
+        if not entry:
+            alt_key = _normalize_card_id(card_id)
+            entry = lookup.get(alt_key)
+        if not entry:
+            return {
+                "card_id": str(card_id),
+                "dependencies_met": False,
+                "dependencies": [],
+                "blocking": [],
+                "error": f"Card {card_id} not found"
+            }
+
+        dep_info = (
+            dependency_state.get(key)
+            or dependency_state.get(_normalize_card_id(card_id))
+            or {}
+        )
+
+        dependencies: List[Dict[str, Any]] = []
+        all_met = not dep_info.get("blocked", False)
+
+        for parent_id in dep_info.get("parents", []):
+            parent_entry = lookup.get(parent_id) or (
+                lookup.get(int(parent_id)) if str(parent_id).isdigit() else None
+            )
+            parent_status = parent_entry["data"].get("status", "unknown") if parent_entry else "unknown"
+            is_missing = parent_id in dep_info.get("missing_parents", [])
+            is_pending = parent_id in dep_info.get("pending_parents", [])
+            is_met = parent_status == "accepted" and not is_missing and not is_pending
+
+            if is_missing:
+                explanation = "Linked card file not found"
+            elif is_pending:
+                explanation = "Submitted but awaiting human acceptance"
+            elif is_met:
+                explanation = "Accepted by human reviewer"
+            else:
+                explanation = f"Card status is '{parent_status}' but not accepted"
+
+            dependencies.append({
+                "type": "linked_card",
+                "card_id": parent_id,
+                "title": parent_entry["data"].get("title", "Unknown") if parent_entry else "Unknown",
+                "card_status": parent_status,
+                "acceptance_status": "accepted" if is_met else ("pending" if is_pending else "not_accepted"),
+                "met": is_met,
+                "explanation": explanation,
+            })
+
+            if not is_met:
+                all_met = False
+
+        context = _get_orientation_context_internal(card_id)
+        if "error" not in context:
+            linked_modules = context.get("linked_modules", {})
+            for module_name, module_info in linked_modules.items():
+                status = module_info.get("status", "unknown")
+                is_met = status in {"completed", "archived", "accepted"}
+                dependencies.append({
+                    "type": "module",
+                    "module_name": module_name,
+                    "status": status,
+                    "linked_cards": module_info.get("linked_cards", []),
+                    "met": is_met,
+                    "explanation": f"Module status: {status}"
+                })
+                if not is_met:
+                    all_met = False
+
+        # Downstream cards blocked by this card
+        padded_self = _normalize_card_id(card_id)
+        blocking: List[Dict[str, Any]] = []
+        for child_entry in card_entries:
+            child_data = child_entry["data"]
+            linked_to = child_data.get("linked_to")
+            if linked_to is None:
+                continue
+            if _normalize_card_id(linked_to) != padded_self:
+                continue
+            blocking.append({
+                "card_id": child_data.get("id", child_entry.get("id_str")),
+                "title": child_data.get("title", "Unknown"),
+                "status": child_data.get("status", "unknown"),
+                "project": child_data.get("project", "unknown"),
+                "assigned_to": child_data.get("assigned_to", "unknown")
+            })
+
+        return {
+            "card_id": str(card_id),
+            "dependencies_met": all_met,
+            "dependencies": dependencies,
+            "blocking": blocking,
+            "blocking_count": len(blocking),
+            "workflow_note": "Dependencies require human acceptance, not just completion, to maintain review quality control"
+        }
+
+    except Exception as exc:
+        return {
+            "card_id": str(card_id),
+            "dependencies_met": False,
+            "dependencies": [],
+            "blocking": [],
+            "error": f"Failed to summarize dependencies: {exc}"
+        }
+
+
+def _collect_card_progress(card_id: str, run_tests: bool = False, test_command: Optional[str] = None) -> Dict[str, Any]:
+    """Gather orientation, documentation, workspace, test, and dependency status for a card."""
+    padded = _normalize_card_id(card_id)
+    orientation_candidates = [
+        workflow.orientation_dir / f"orientation_packet_{padded}.yaml",
+        workflow.orientation_dir / f"orientation_packet_{card_id}.yaml"
+    ]
+    orientation_path = next((path for path in orientation_candidates if path.exists()), orientation_candidates[0])
+    orientation_exists = orientation_path.exists()
+    orientation_info = {
+        "present": orientation_exists,
+        "path": str(orientation_path),
+        "last_modified": datetime.fromtimestamp(orientation_path.stat().st_mtime).isoformat()
+        if orientation_exists else None
+    }
+
+    doc_path = workflow.base_dir / "agent_workspaces" / workflow.current_agent / f"output_{padded}.md"
+    documentation_exists = doc_path.exists()
+    documentation_length = len(doc_path.read_text()) if documentation_exists else 0
+    documentation_info = {
+        "present": documentation_exists,
+        "path": str(doc_path),
+        "length": documentation_length,
+        "last_modified": datetime.fromtimestamp(doc_path.stat().st_mtime).isoformat()
+        if documentation_exists else None
+    }
+
+    card_metadata = _load_card_metadata(card_id) or {}
+    project_name = card_metadata.get("project")
+    workspace_dir = workflow.base_dir / "agent_workspaces" / workflow.current_agent
+    if project_name:
+        workspace_dir = workspace_dir / project_name
+    workspace_prefix = workspace_dir.relative_to(workflow.base_dir).as_posix()
+    workspace_info = {
+        "path": str(workspace_dir),
+        "exists": workspace_dir.exists(),
+        "tracked_changes": _collect_git_status(workspace_prefix)
+    }
+
+    tests_dir = workflow.base_dir / "tests"
+    tests_present = tests_dir.exists() and any(tests_dir.rglob("*.py"))
+    tests_info: Dict[str, Any] = {
+        "tests_present": tests_present,
+        "status": "not_run",
+        "command": test_command or "pytest",
+    }
+
+    if run_tests:
+        command = shlex.split(test_command) if test_command else ["pytest"]
+        try:
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                cwd=str(workflow.base_dir)
+            )
+            tests_info["status"] = "passed" if result.returncode == 0 else "failed"
+            tests_info["return_code"] = result.returncode
+            tests_info["stdout"] = result.stdout
+            tests_info["stderr"] = result.stderr
+            tests_info["command"] = " ".join(command)
+        except Exception as exc:
+            tests_info["status"] = "error"
+            tests_info["error"] = str(exc)
+
+    dependency_info = _summarize_dependencies(card_id)
+    dependencies_met = dependency_info.get("dependencies_met", True)
+
+    documentation_ready = documentation_exists and documentation_length >= 200
+    tests_ok = tests_info["status"] in {"passed", "not_run"}
+    ready_to_submit = orientation_exists and documentation_ready and dependencies_met and tests_ok
+
+    progress_summary = {
+        "reoriented": orientation_exists,
+        "documentation_exists": documentation_exists,
+        "documentation_length": documentation_length,
+        "documentation_ready": documentation_ready,
+        "tests_status": tests_info["status"],
+        "dependencies_met": dependencies_met,
+        "ready_to_submit": ready_to_submit
+    }
+
+    next_actions: List[str] = []
+    if not orientation_exists:
+        next_actions.append("Run start_work() or reorient the card.")
+    if not documentation_exists:
+        next_actions.append(f"Create documentation at {doc_path.name}.")
+    elif not documentation_ready:
+        next_actions.append("Expand documentation to include summary, deliverables, and validation details.")
+    if not dependencies_met:
+        next_actions.append("Resolve blocking dependencies before progressing.")
+    if tests_info["status"] == "failed":
+        next_actions.append("Fix failing tests and rerun the suite.")
+    elif tests_info["status"] == "not_run":
+        next_actions.append("Run pytest to verify changes.")
+
+    return {
+        "card_id": str(card_id),
+        "title": card_metadata.get("title"),
+        "project": project_name,
+        "orientation": orientation_info,
+        "documentation": documentation_info,
+        "workspace": workspace_info,
+        "tests": tests_info,
+        "dependencies": dependency_info,
+        "progress": progress_summary,
+        "next_actions": next_actions,
+        "ready_to_submit": ready_to_submit
+    }
 @mcp.tool
 def health_check() -> Dict[str, Any]:
     """Health check endpoint to verify the workflow automation server is running correctly."""
@@ -127,86 +408,10 @@ def check_dependencies(card_id: str) -> Dict[str, Any]:
     Args:
         card_id: The ID of the card to check dependencies for
     """
-    try:
-        dependency_state, card_entries = compute_dependency_state()
-        lookup: Dict[Any, Dict[str, Any]] = {}
-        for entry in card_entries:
-            key = entry["id"] if entry["id"] is not None else entry["id_str"]
-            lookup[key] = entry
-
-        key = int(card_id) if str(card_id).isdigit() else str(card_id)
-        entry = lookup.get(key)
-        if not entry:
-            alt_key = str(card_id).zfill(3)
-            entry = lookup.get(alt_key)
-        if not entry:
-            return {"error": f"Card {card_id} not found"}
-
-        dep_info = dependency_state.get(key) or dependency_state.get(str(card_id).zfill(3)) or {}
-        dependencies: List[Dict[str, Any]] = []
-        all_met = not dep_info.get("blocked", False)
-
-        for parent_id in dep_info.get("parents", []):
-            parent_entry = lookup.get(parent_id) or (
-                lookup.get(int(parent_id)) if parent_id.isdigit() else None
-            )
-            parent_status = parent_entry["data"].get("status", "unknown") if parent_entry else "unknown"
-            is_missing = parent_id in dep_info.get("missing_parents", [])
-            is_pending = parent_id in dep_info.get("pending_parents", [])
-            is_met = not dep_info.get("blocked", False) or (not is_missing and not is_pending and parent_status == "accepted")
-
-            if is_missing:
-                explanation = "Linked card file not found"
-                is_met = False
-            elif is_pending:
-                explanation = "Submitted but awaiting human acceptance"
-                is_met = False
-            elif parent_status == "accepted":
-                explanation = "Accepted by human reviewer"
-                is_met = True
-            else:
-                explanation = f"Card status is '{parent_status}' but not accepted"
-                is_met = False
-
-            dependencies.append({
-                "type": "linked_card",
-                "card_id": parent_id,
-                "title": parent_entry["data"].get("title", "Unknown") if parent_entry else "Unknown",
-                "card_status": parent_status,
-                "acceptance_status": "accepted" if is_met else ("pending" if is_pending else "not_accepted"),
-                "met": is_met,
-                "explanation": explanation,
-            })
-
-            if not is_met:
-                all_met = False
-
-        context = _get_orientation_context_internal(card_id)
-        if "error" not in context:
-            linked_modules = context.get("linked_modules", {})
-            for module_name, module_info in linked_modules.items():
-                status = module_info.get("status", "unknown")
-                is_met = status == "completed"
-                dependencies.append({
-                    "type": "module",
-                    "module_name": module_name,
-                    "status": status,
-                    "linked_cards": module_info.get("linked_cards", []),
-                    "met": is_met,
-                    "explanation": f"Module status: {status}"
-                })
-                if not is_met:
-                    all_met = False
-
-        return {
-            "card_id": card_id,
-            "dependencies_met": all_met,
-            "dependencies": dependencies,
-            "workflow_note": "Dependencies require human acceptance, not just completion, to maintain review quality control"
-        }
-
-    except Exception as e:
-        return {"error": f"Failed to check dependencies for card {card_id}: {str(e)}"}
+    summary = _summarize_dependencies(card_id)
+    if "error" in summary:
+        return {"error": summary["error"]}
+    return summary
 
 @mcp.tool
 def create_card(
@@ -355,7 +560,8 @@ def start_work() -> Dict[str, Any]:
                 return {
                     "action": "waiting", 
                     "message": f"No work available. {len(blocked)} cards blocked by dependencies.",
-                    "suggestion": "Check blocked cards or create a new card"
+                    "suggestion": "Check blocked cards or create a new card",
+                    "blocked_cards": blocked
                 }
             else:
                 return {
@@ -381,12 +587,18 @@ def start_work() -> Dict[str, Any]:
         if result.returncode != 0:
             return {"action": "error", "message": f"Failed to start card: {result.stderr}"}
 
+        dependency_summary = _summarize_dependencies(card_id)
+        progress_info = _collect_card_progress(card_id)
+
         return {
             "action": "started",
             "card_id": card_id,
             "title": next_card["title"],
             "message": f"Started work on Card {card_id}: {next_card['title']}",
             "next_step": "Use get_card_context to see what you need to do",
+            "progress": progress_info["progress"],
+            "next_actions": progress_info["next_actions"],
+            "dependency_summary": dependency_summary,
             "workflow_reminder": {
                 "current_phase": "1. REORIENT ✅ (completed)",
                 "next_phases": [
@@ -417,26 +629,8 @@ def get_card_context(card_id: str) -> Dict[str, Any]:
         if "error" in context:
             return {"error": context["error"]}
 
-        # Check progress on the card
-        padded_card_id = str(card_id).zfill(3)
-        orientation_packet = workflow.orientation_dir / f"orientation_packet_{padded_card_id}.yaml"
-        output_file = workflow.base_dir / "agent_workspaces" / workflow.current_agent / f"output_{padded_card_id}.md"
-
-        # Build progress checklist
-        progress = {
-            "reoriented": orientation_packet.exists(),
-            "documentation_exists": output_file.exists(),
-            "documentation_length": len(output_file.read_text()) if output_file.exists() else 0,
-            "ready_to_submit": output_file.exists() and len(output_file.read_text()) > 200
-        }
-
-        # Determine next recommended action
-        if not progress["documentation_exists"]:
-            next_action = "Implement deliverables, then create output_{card_id}.md documentation"
-        elif not progress["ready_to_submit"]:
-            next_action = "Complete documentation in output_{card_id}.md"
-        else:
-            next_action = "Review work and call submit_card() when ready"
+        progress_info = _collect_card_progress(card_id)
+        next_action = progress_info["next_actions"][0] if progress_info["next_actions"] else "Ready to submit"
 
         # Streamlined response focused on action
         return {
@@ -448,13 +642,26 @@ def get_card_context(card_id: str) -> Dict[str, Any]:
             "questions_to_resolve": context.get("open_questions", []),
             "has_feedback": context.get("has_review_notes", False),
             "feedback_summary": context.get("review_notes_summary", "") if context.get("has_review_notes") else None,
-            "progress": progress,
+            "progress": progress_info["progress"],
+            "dependency_summary": progress_info["dependencies"],
+            "workspace": progress_info["workspace"],
+            "tests_status": progress_info["tests"],
             "next_recommended_action": next_action,
+            "ready_to_submit": progress_info["ready_to_submit"],
             "ready_to_code": True
         }
 
     except Exception as e:
         return {"error": f"Failed to get context: {str(e)}"}
+
+
+@mcp.tool
+def get_card_progress(card_id: str, run_tests: bool = False, test_command: Optional[str] = None) -> Dict[str, Any]:
+    """Provide a detailed progress checklist for a glyphcard, optionally running tests."""
+    try:
+        return _collect_card_progress(card_id, run_tests=run_tests, test_command=test_command)
+    except Exception as exc:
+        return {"error": f"Failed to gather progress for card {card_id}: {exc}"}
 
 @mcp.tool
 def submit_card(card_id: str, module_name: Optional[str] = None) -> Dict[str, Any]:

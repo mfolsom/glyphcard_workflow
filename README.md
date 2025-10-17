@@ -26,6 +26,7 @@ Setup guides:
 Then use MCP tools in your AI agent:
 - `start_work()` - Pick up and orient on next available card
 - `get_card_context(card_id)` - Get detailed card information
+- `get_card_progress(card_id)` - Check progress and optionally run tests
 - `submit_card(card_id)` - Submit completed work for review
 - `list_my_work()` - See available and blocked cards
 
