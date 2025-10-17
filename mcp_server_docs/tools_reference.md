@@ -84,6 +84,58 @@ submit_card(card_id="3")
 
 ---
 
+### `get_card_progress(card_id: str, run_tests: bool = False, test_command: str = None)`
+**Description:** Provide detailed progress checklist for a glyphcard, optionally running tests.
+
+**Parameters:**
+- `card_id`: The ID of the card to check progress for
+- `run_tests`: Boolean - whether to run tests (default: False)
+- `test_command`: Optional test command (default: "pytest")
+
+**Returns:**
+- `card_id`: Card identifier
+- `title`: Card title
+- `project`: Project name
+- `orientation`: Orientation packet status
+  - `present`: Boolean - orientation exists
+  - `path`: Path to orientation packet
+  - `last_modified`: ISO timestamp
+- `documentation`: Documentation status
+  - `present`: Boolean - documentation exists
+  - `path`: Path to output file
+  - `length`: Documentation length in characters
+  - `last_modified`: ISO timestamp
+- `workspace`: Workspace status
+  - `path`: Workspace directory path
+  - `exists`: Boolean - workspace exists
+  - `tracked_changes`: List of git-tracked changes
+- `tests`: Test status
+  - `tests_present`: Boolean - tests exist
+  - `status`: "passed", "failed", "not_run", or "error"
+  - `command`: Test command used
+  - `stdout`: Test output (if run)
+  - `stderr`: Test errors (if run)
+- `dependencies`: Full dependency analysis
+- `progress`: Progress summary
+  - `reoriented`: Boolean
+  - `documentation_exists`: Boolean
+  - `documentation_ready`: Boolean
+  - `tests_status`: Test status
+  - `dependencies_met`: Boolean
+  - `ready_to_submit`: Boolean
+- `next_actions`: List of recommended next steps
+- `ready_to_submit`: Boolean - overall submission readiness
+
+**Example:**
+```python
+get_card_progress(card_id="3", run_tests=True)
+# Returns comprehensive progress tracking with test results
+```
+
+**Use when:** Need detailed progress check or want to validate tests before submission.
+
+---
+
 ### `list_my_work()`
 **Description:** Show all work assigned to you in easy-to-understand format.
 
@@ -373,7 +425,10 @@ get_card_context(card_id="3")
 
 # 4. Build deliverables...
 
-# 5. Submit when done
+# 5. Check progress and run tests
+get_card_progress(card_id="3", run_tests=True)
+
+# 6. Submit when done
 submit_card(card_id="3")
 ```
 
