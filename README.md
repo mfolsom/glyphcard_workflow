@@ -1,5 +1,17 @@
 # Glyphcard Workflow System
 
+> **Sunset notice — May 2026**
+>
+> We're retiring Glyphcard. Agents have advanced meaningfully since this project started in early 2025, and a standalone workflow tool is no longer the best solution to the problem it was built to solve — Claude Skills, hooks, subagents, and mature issue-tracker MCP servers (Linear, Jira, GitHub) now cover this territory natively.
+>
+> Glyphcard did what it set out to do: it pushed a conversation across the industry about managing agents the way good engineering leaders manage teams — with clear tasks, feedback loops, and room to reason. Those ideas have landed in places much bigger than this repo, which is the best outcome we could have asked for.
+>
+> The same team is building something new — more relevant, and possibly bigger. Watch this space.
+>
+> The repository remains available as a reference and the original article below still tells the story.
+
+---
+
 An agent-friendly project management system that breaks work into atomic cards and guides AI agents through a structured four-step development workflow.
 
 ## Why Glyphcard?
